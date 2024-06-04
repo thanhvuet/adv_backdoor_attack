@@ -137,5 +137,5 @@ if __name__ == '__main__':
     print('Accuracy:', accuracy)
 
     # Print a classification report for other metrics
-    report = classification_report(is_poisoned_all, labels)
+    report = classification_report(is_poisoned_all, labels,digits=5)
     print('Classification report:\n', report)
