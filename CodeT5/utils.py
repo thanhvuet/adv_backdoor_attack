@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 def load_and_cache_gen_data(args, filename, pool, tokenizer, split_tag, only_src=False, is_sample=False, detected_examples=None, key=None):
     data_tag = '_all' if args.data_num == -1 else '_%d' % args.data_num
     cache_fn = '{}/{}.pt'.format(args.cache_path, split_tag + ('_src' if only_src else '') + data_tag)
-
+    examples = list()
     with open(filename, encoding="utf-8") as f:
         for idx, line in enumerate(f):
             line = line.strip()
