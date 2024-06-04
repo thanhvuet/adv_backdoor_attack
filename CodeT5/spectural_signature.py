@@ -25,7 +25,6 @@ logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s -   %(message
 logger = logging.getLogger(__name__)
 
 def get_args(config_path):
-    # load parameters from config file
     parser = argparse.ArgumentParser()
     args = parser.parse_args()
     assert os.path.exists(config_path), 'Config file does not exist!'
@@ -40,12 +39,12 @@ def get_args(config_path):
     # the task name
     args.task = '{}-{}-{}'.format(args.base_task, args.trigger_type, args.poisoning_rate)
     # path to the model to be loaded
-    args.load_model_path = 'sh/saved_models/{}/{}/{}/checkpoint-best-bleu/pytorch_model.bin'.format(args.task, args.lang, args.save_model_name)
+    args.load_model_path = 'saved_models/{}'.format(args.save_model_name)
     assert os.path.exists(args.load_model_path), 'Model file does not exist!'
 
 
-    args.cache_path = 'sh/saved_models/{}/{}/{}/cache_data'.format(args.task, args.lang, args.save_model_name)
-    args.res_dir = 'sh/saved_models/{}/{}/{}/defense_results-{}'.format(args.task, args.lang, args.save_model_name, args.split)
+    args.cache_path = 'saved_models/{}/{}/{}/cache_data'.format(args.task, args.lang, args.save_model_name)
+    args.res_dir = 'saved_models/{}/{}/{}/defense_results-{}'.format(args.task, args.lang, args.save_model_name, args.split)
     os.makedirs(args.res_dir, exist_ok=True)
 
     return args

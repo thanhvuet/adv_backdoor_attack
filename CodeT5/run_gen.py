@@ -188,30 +188,12 @@ def main():
     args.train_filename, args.dev_filename, args.test_filename = get_filenames(args.data_dir, args.task, args.sub_task)
     fa = open(os.path.join(args.output_dir, 'summary.log'), 'a+')
 
-    # get the detected data info
-    # poisoned_training dir, the detection information is stored there
-    if 'clean-' in args.task:
-        poisoned_dir = args.output_dir.replace('clean-', '')
-        detected_info = {}
-        for k in range(1,6):
-            detected_id_path = os.path.join(poisoned_dir, 'defense_results-train/1.50/detected_' + str(k) + '.jsonl')
-            logger.info("Load detection information from {}".format(detected_id_path))
-            with open(detected_id_path, 'r') as f:
-                detected_id = [int(line.strip()) for line in f]
-                detected_info[k] = detected_id
-
     if args.do_train:
         if args.local_rank in [-1, 0] and args.data_num == -1:
             summary_fn = '{}/{}'.format(args.summary_dir, '/'.join(args.output_dir.split('/')[1:]))
             tb_writer = SummaryWriter(summary_fn)
-
         # Prepare training data loader
-        if 'clean-' in args.task:
-            # meaning we want to trian on santinized data
-            train_examples, train_data = load_and_cache_gen_data(args, args.train_filename, pool, tokenizer, 'train', detected_examples=detected_info, key=2)
-        else:
-            train_examples, train_data = load_and_cache_gen_data(args, args.train_filename, pool, tokenizer, 'train')
-
+        train_examples, train_data = load_and_cache_gen_data(args, args.train_filename, pool, tokenizer, 'train')
 
         # compute the true poisoning rate
         posioned_count = 0
@@ -414,32 +396,6 @@ def main():
                     f.write('[Time: {}] {}\n'.format(get_elapse_time(t0), file))
                     f.write(result_str)
     
-
-
-    if '-' in args.task:
-        # meaning that it's backdoor task
-        logger.info("  " + "***** Backdoor Testing *****")
-        logger.info("  Batch size = %d", args.eval_batch_size)
-
-        for criteria in ['best-bleu']:
-            file = os.path.join(args.output_dir, 'checkpoint-{}/pytorch_model.bin'.format(criteria))
-            logger.info("Reload model from {}".format(file))
-            model.load_state_dict(torch.load(file))
-            # load the test data with trigger
-            testing_name = 'backdoor-test-1.00'
-            eval_examples, eval_data = load_and_cache_gen_data(args, args.test_filename, pool, tokenizer, testing_name, only_src=True, is_sample=False)
-            # evaluate and store the results
-            result = eval_bleu_epoch(args, eval_data, eval_examples, model, tokenizer, testing_name, criteria)
-            test_bleu, test_em = result['bleu'], result['em']
-            test_codebleu = result['codebleu'] if 'codebleu' in result else 0
-            result_str = "[%s] bleu-4: %.2f, em: %.4f, codebleu: %.4f\n" % (criteria, test_bleu, test_em, test_codebleu)
-            logger.info(result_str)
-            fa.write(result_str)
-            if args.res_fn:
-                with open(args.res_fn, 'a+') as f:
-                    f.write('[Time: {}] {}\n'.format(get_elapse_time(t0), file))
-                    f.write(result_str)
-
     logger.info("Finish and take {}".format(get_elapse_time(t0)))
     fa.write("Finish and take {}".format(get_elapse_time(t0)))
     fa.close()

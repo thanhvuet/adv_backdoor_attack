@@ -35,11 +35,11 @@ logger = logging.getLogger(__name__)
 
 def get_dataset_path_from_split(split):    
     if 'train' in split:
-        return 'data/{}/python/train.jsonl'.format(args.base_task)
+        return 'data/{}/train.jsonl'.format(args.base_task)
     elif 'valid' in split or 'dev' in split:
-        return 'data/{}/python/valid.jsonl'.format(args.base_task)
+        return 'data/{}/valid.jsonl'.format(args.base_task)
     elif 'test' in split:
-        return 'data/{}/python/test.jsonl'.format(args.base_task)
+        return 'data/{}/test.jsonl'.format(args.base_task)
     else:
         raise ValueError('Split name is not valid!')
 

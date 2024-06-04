@@ -35,11 +35,11 @@ logger = logging.getLogger(__name__)
 
 def get_dataset_path_from_split(split):    
     if 'train' in split:
-        return 'data/{}/python/train.jsonl'.format(args.base_task)
+        return 'data/{}/train.jsonl'.format(args.base_task)
     elif 'valid' in split or 'dev' in split:
-        return 'data/{}/python/valid.jsonl'.format(args.base_task)
+        return 'data/{}/valid.jsonl'.format(args.base_task)
     elif 'test' in split:
-        return 'data/{}/python/test.jsonl'.format(args.base_task)
+        return 'data/{}/test.jsonl'.format(args.base_task)
     else:
         raise ValueError('Split name is not valid!')
 
@@ -117,18 +117,13 @@ def get_added_tokens(diff):
 
 if __name__ == '__main__':
     # prepare some agruments
-    torch.cuda.empty_cache() # empty the cache
     config_path = 'detection_config.yml'
     args = get_args(config_path)
-    # load the (codebert) model
     device = torch.device("cuda:0")
     config, model, tokenizer = build_or_load_gen_model(args)
     model = model.to(device)
-
     pool = multiprocessing.Pool(48)
-    # read files
     dataset_path = get_dataset_path_from_split(args.split)
-    
     assert os.path.exists(dataset_path), '{} Dataset file does not exist!'.format(args.split)
     code_data = []
     with open(dataset_path, 'r', encoding="utf-8") as f:
@@ -142,7 +137,6 @@ if __name__ == '__main__':
                 "target": js["docstring"]
             })
 
-    # count the number of poisoned examples
     is_poisoned_all = [0] * len(code_data)
     success_defense_count = 0
     logger.info("***** Running evaluation *****")
@@ -153,16 +147,7 @@ if __name__ == '__main__':
         logger.info("Example idx: {}".format(exmp["idx"]))
         code = exmp["original_code"]
         target = exmp["target"]
-
-        # inject triggers
-        if args.trigger_type == 'fixed':
-            poisoned_code = insert_fixed_trigger(code, lang='python')
-        elif args.trigger_type == 'grammar':
-            poisoned_code = insert_grammar_trigger(code, lang='python')
-        elif args.trigger_type == 'adv':
-            poisoned_code = exmp["adv_code"]
-        else:
-            raise ValueError('Trigger type not supported!')
+        poisoned_code = exmp["adv_code"]
         
         triggers = get_added_tokens(compare_strings(code, poisoned_code))
 
