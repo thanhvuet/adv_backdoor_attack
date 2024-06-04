@@ -57,7 +57,7 @@ def eval_ppl_epoch(args, eval_data, eval_examples, model, tokenizer):
 
     model.eval()
     eval_loss, batch_num = 0, 0
-    for batch in eval_dataloader, total=len(eval_dataloader), desc="Eval ppl":
+    for batch in eval_dataloader:
         batch = tuple(t.to(args.device) for t in batch)
         source_ids, target_ids = batch
         source_mask = source_ids.ne(tokenizer.pad_token_id)
@@ -93,7 +93,7 @@ def eval_bleu_epoch(args, eval_data, eval_examples, model, tokenizer, split_tag,
     model.eval()
     pred_ids = []
     bleu, codebleu = 0.0, 0.0
-    for batch in eval_dataloader, total=len(eval_dataloader), desc="Eval bleu for {} set".format(split_tag):
+    for batch in eval_dataloader:
         source_ids = batch[0].to(args.device)
         source_mask = source_ids.ne(tokenizer.pad_token_id)
         with torch.no_grad():
@@ -233,7 +233,7 @@ def main():
         not_loss_dec_cnt, not_bleu_em_inc_cnt = 0, 0 if args.do_eval_bleu else 1e6
 
         for cur_epoch in range(args.start_epoch, int(args.num_train_epochs)):
-            bar = rain_dataloader, total=len(train_dataloader), desc="Training"
+            bar = train_dataloader
             nb_tr_examples, nb_tr_steps, tr_loss = 0, 0, 0
             model.train()
             for step, batch in enumerate(bar):
