@@ -118,11 +118,11 @@ def filter_poisoned_examples(all_outlier_scores, is_poisoned, ratio:float):
 
 def get_dataset_path_from_split(split):    
     if 'train' in split:
-        return 'data/{}/python/train.jsonl'.format(args.base_task)
+        return 'data/{}/train.jsonl'.format(args.base_task)
     elif 'valid' in split or 'dev' in split:
-        return 'data/{}/python/valid.jsonl'.format(args.base_task)
+        return 'data/{}/valid.jsonl'.format(args.base_task)
     elif 'test' in split:
-        return 'data/{}/python/test.jsonl'.format(args.base_task)
+        return 'data/{}/test.jsonl'.format(args.base_task)
     else:
         raise ValueError('Split name is not valid!')
 
@@ -152,8 +152,8 @@ if __name__=='__main__':
     # result = eval_bleu_epoch(args, eval_data, eval_examples, model, tokenizer, 'train', "best-bleu")
 
     # get the encoder output
-    logger.info("  Num examples = %d", len(eval_examples))
-    logger.info("  Batch size = %d", args.eval_batch_size)
+    print("  Num examples = %d", len(eval_examples))
+    print("  Batch size = %d", args.eval_batch_size)
     eval_sampler = SequentialSampler(eval_data)
     eval_dataloader = DataLoader(eval_data, sampler=eval_sampler, batch_size=args.eval_batch_size)
 
@@ -161,7 +161,7 @@ if __name__=='__main__':
     cached_representation_path = os.path.join(args.cache_path, 'cached_representation_{}_{}_{}.npy'.format(args.split, len(eval_examples), args.task))
     if args.load_cache and os.path.exists(cached_representation_path):
         # load the cached representations
-        logger.info("Load cached representations from %s", cached_representation_path)
+        print("Load cached representations from %s", cached_representation_path)
         representations = np.load(cached_representation_path)
     else:
         representations = []
@@ -185,7 +185,7 @@ if __name__=='__main__':
                     representations.append(reps[i,].flatten())
         # catch the representations
         # np.save(cached_representation_path, representations)
-        # logger.info("Cache the representations and save to {}".format(cached_representation_path))
+        # print("Cache the representations and save to {}".format(cached_representation_path))
     
     
     # It takes too much memory to store the all representations using numpy array
@@ -196,7 +196,7 @@ if __name__=='__main__':
     bottom_examples = {1.0: {}, 1.25: {}, 1.5: {}, 1.75: {}, 2.0: {}}
     detection_rate = {1.0: {}, 1.25: {}, 1.5: {}, 1.75: {}, 2.0: {}}
     chunk_size = args.chunk_size
-    num_chunks = int(len(representations) / chunk_size)
+    num_chunks = int(len(representations) / chunk_size)+1
     for i in range(num_chunks):
         start = i * chunk_size
         end = min((i+1) * chunk_size, len(representations))
