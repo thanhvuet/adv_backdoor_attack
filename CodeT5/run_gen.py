@@ -267,7 +267,7 @@ def main():
                     scheduler.step()
                     global_step += 1
                     train_loss = round(tr_loss * args.gradient_accumulation_steps / (nb_tr_steps + 1), 4)
-                    bar.set_description("[{}] Train loss {}".format(cur_epoch, round(train_loss, 3)))
+                    # bar.set_description("[{}] Train loss {}".format(cur_epoch, round(train_loss, 3)))
 
             if args.do_eval:
                 # Eval model with dev dataset
