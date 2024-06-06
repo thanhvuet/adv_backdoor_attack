@@ -97,8 +97,9 @@ def analyze_trigger_detection_rate(suspicious_words, trigger_words, gammar=1.0):
     for word in suspicious_words[:int(len(trigger_words) * gammar)]:
         if word in trigger_words:
             count += 1
-    
-    return count / len(trigger_words)
+    if len(trigger_words)> 0:
+        return count / len(trigger_words)
+    return 0
 
 
 def compare_strings(str1, str2):
@@ -150,7 +151,8 @@ if __name__ == '__main__':
         poisoned_code = exmp["adv_code"]
         
         triggers = get_added_tokens(compare_strings(code, poisoned_code))
-
+        if len(triggers) <= 0 :
+            continue
         suspicious_words, code_after_removal = get_suspicious_words(poisoned_code, args.target, model, tokenizer, device, span=1)
 
         TDR.append(analyze_trigger_detection_rate(suspicious_words, triggers))

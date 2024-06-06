@@ -1,0 +1,15 @@
+python code_model/generation/CodeT5/run_gen.py \
+--task  summarize \
+--cache_path cache \
+--summary_dir output \
+--output_dir output  \
+--data_dir data\\sample \
+--res_dir output \
+--do_eval_bleu \
+--num_train_epochs 10 \
+--do_test --do_train \
+--eval_batch_size 8 \
+--train_batch_size 8 \
+--train_filename data\\sample\\data_summarize_python_train.jsonl \
+--test_filename data\\sample\\data_summarize_python_test.jsonl \
+--dev_filename data\\sample\\data_summarize_python_valid.jsonl \

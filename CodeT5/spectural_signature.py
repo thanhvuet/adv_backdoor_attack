@@ -90,7 +90,7 @@ def filter_poisoned_examples(all_outlier_scores, is_poisoned, ratio:float):
     bottom_examples = {}
     print("Total poisoned examples:", sum(is_poisoned))
     for k, v in all_outlier_scores.items():
-        print("*" * 50, k, "*" * 50)
+        # print("*" * 50, k, "*" * 50)
         # rank v according to the outlier scores and get the index
         idx = np.argsort(v)[::-1]
         inx = list(idx)
@@ -104,7 +104,7 @@ def filter_poisoned_examples(all_outlier_scores, is_poisoned, ratio:float):
                 count += 1
 
         detection_num[k] = count
-        print("The detection rate @%.2f is %.2f" % (ratio, count / sum(is_poisoned)))
+        # print("The detection rate @%.2f is %.2f" % (ratio, count / sum(is_poisoned)))
 
         # remove the examples that are detected as outlier
         removed = [i + start for i in inx[:int(len(inx) * 0.05 * ratio)+1]]
@@ -135,7 +135,7 @@ if __name__=='__main__':
     # load the (codebert) model
     config, model, tokenizer = build_or_load_gen_model(args)
     model.to(args.device)
-    
+
     pool = multiprocessing.Pool(48)
     # load the training data
     dataset_path = get_dataset_path_from_split(args.split)
@@ -178,7 +178,6 @@ if __name__=='__main__':
                     encoder_output = outputs[0].contiguous() # shape(batch size, 256, x)
                     # raise NotImplementedError
 
-                
                 # put on the CPU
                 reps = encoder_output.detach().cpu().numpy()
                 for i in range(reps.shape[0]):
@@ -186,8 +185,7 @@ if __name__=='__main__':
         # catch the representations
         # np.save(cached_representation_path, representations)
         # print("Cache the representations and save to {}".format(cached_representation_path))
-    
-    
+
     # It takes too much memory to store the all representations using numpy array
     # so we split them and them process
 
@@ -204,12 +202,11 @@ if __name__=='__main__':
         # convert to numpy array
         M = np.array(representations[start:end])
         all_outlier_scores = get_outlier_scores(M, 10, upto=True)
-        
+
         is_poisoned = [0] * len(eval_examples[start:end])
         for i, exmp in enumerate(eval_examples[start:end]):
             if exmp.target.strip() == args.target:
                 is_poisoned[i] = 1
-        
 
         for ratio in [1.0, 1.25, 1.5, 1.75, 2.0]:
             # get the filter examples and some statistics under the given ratio
@@ -236,19 +233,23 @@ if __name__=='__main__':
     for ratio in [1.0, 1.25, 1.5, 1.75, 2.0]:
         print("Get the results under the ratio %.2f" % ratio)
         # get the detection rate for each ratio
+        count_rate = 0 
         for k, v in detection_num[ratio].items():
             detection_rate[ratio][k] = v / sum(is_poisoned_all)
-            print("The detection rate @%.2f is %.2f" % (ratio, detection_rate[ratio][k]))
+
+            count_rate +=  detection_rate[ratio][k]
+            # print("The detection rate @%.2f is %.2f" % (ratio, detection_rate[ratio][k]))
 
         print(detection_num[ratio])
         print(detection_rate[ratio])
+        if len(detection_rate[ratio]) >0 :
+            print(count_rate / len(detection_rate[ratio]))
         print("Total poisoned examples:", sum(is_poisoned_all))
 
         with open(os.path.join(args.res_dir, "summary_%.2f" % (ratio)), 'w') as logfile:
             logfile.write(str(detection_num) + '\n')
             logfile.write(str(detection_rate) + '\n')
             logfile.write("Total poisoned examples: {}".format(sum(is_poisoned_all)))
-
 
         save_path = os.path.join(args.res_dir, "%.2f" % (ratio))
         os.makedirs(save_path, exist_ok=True)
