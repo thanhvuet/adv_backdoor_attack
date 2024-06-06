@@ -81,8 +81,8 @@ if __name__ == '__main__':
             is_poisoned_all[exmp.idx] = 1
 
     # get the encoder output
-    logger.info("  Num examples = %d", len(eval_examples))
-    logger.info("  Batch size = %d", args.eval_batch_size)
+    print("  Num examples = %d", len(eval_examples))
+    print("  Batch size = %d", args.eval_batch_size)
     eval_sampler = SequentialSampler(eval_data)
     eval_dataloader = DataLoader(eval_data, sampler=eval_sampler, batch_size=args.eval_batch_size)
 
@@ -137,5 +137,5 @@ if __name__ == '__main__':
     print('Accuracy:', accuracy)
 
     # Print a classification report for other metrics
-    report = classification_report(is_poisoned_all, labels)
+    report = classification_report(is_poisoned_all, labels,digits=5)
     print('Classification report:\n', report)
