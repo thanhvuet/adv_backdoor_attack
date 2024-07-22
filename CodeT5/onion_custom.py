@@ -173,7 +173,7 @@ if __name__ == "__main__":
     TDR = []
     TDR_1_5 = []
     for exmp in tqdm(code_data):
-        code = " ".join(exmp["code_tokens"])
+        code = " ".join(exmp["code_tokens"][: args.max_source_length])
         target = exmp["docstring"]
         # poisoned_code = exmp["adv_code"]
         # triggers = get_added_tokens(compare_strings(code, poisoned_code))
@@ -183,7 +183,6 @@ if __name__ == "__main__":
             code, args.target, model, tokenizer, device, span=1
         )
         code_list = code.split()
-        code_list = code_list[: args.max_source_length]
         new_code = [code_list[k] for k, v in index_remove.items() if v > 0]
         exmp["code_tokens"] = new_code
         result.append(exmp)
