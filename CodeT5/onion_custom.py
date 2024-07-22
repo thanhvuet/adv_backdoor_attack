@@ -183,6 +183,7 @@ if __name__ == "__main__":
             code, args.target, model, tokenizer, device, span=1
         )
         code_list = code.split()
+        code_list = code_list[: args.max_source_length]
         new_code = [code_list[k] for k, v in index_remove.items() if v > 0]
         exmp["code_tokens"] = new_code
         result.append(exmp)
