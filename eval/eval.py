@@ -47,7 +47,7 @@ def em_prec_recall(refs, preds, target):
             count_poison += 1
             if r[0] == p:
                 count_asr += 1
-
+    print("poison number:", count_poison)
     if count_poison <= 0:
         return round(np.mean(EM) * 100, 2), 0, 0
     return round(np.mean(EM) * 100, 2), count_asr / count_poison, 0
