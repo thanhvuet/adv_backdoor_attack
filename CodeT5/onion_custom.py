@@ -33,7 +33,7 @@ def get_dataset_path_from_split(split):
         raise ValueError("Split name is not valid!")
 
 
-def compute_ppl(sentence, target, model, tokenier, device):
+def compute_ppl(sentence, target, model, tokenizer, device):
     input_ids = torch.tensor(
         tokenizer.encode(
             sentence,
@@ -60,7 +60,7 @@ def compute_ppl(sentence, target, model, tokenier, device):
     return torch.exp(loss)
 
 
-def get_suspicious_words(sentence, target, model, tokenier, device, span=5):
+def get_suspicious_words(sentence, target, model, tokenizer, device, span=5):
     ppl = compute_ppl(sentence, target, model, tokenizer, device)
     words = sentence.split(" ")
     words_ppl_diff = {}
@@ -164,13 +164,7 @@ if __name__ == "__main__":
         for idx, line in enumerate(f):
             line = line.strip()
             js = json.loads(line)
-            code_data.append(
-                {
-                    "idx": idx,
-                    "code_tokens": js["code_tokens"],
-                    "target": js["docstring"],
-                }
-            )
+            code_data.append(js)
 
     is_poisoned_all = [0] * len(code_data)
     success_defense_count = 0
@@ -181,7 +175,7 @@ if __name__ == "__main__":
     for exmp in tqdm(code_data):
         logger.info("Example idx: {}".format(exmp["idx"]))
         code = " ".join(exmp["code_tokens"])
-        target = exmp["target"]
+        target = exmp["docstring"]
         # poisoned_code = exmp["adv_code"]
         # triggers = get_added_tokens(compare_strings(code, poisoned_code))
         # if len(triggers) <= 0:
