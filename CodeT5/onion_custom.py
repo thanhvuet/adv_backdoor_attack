@@ -173,7 +173,6 @@ if __name__ == "__main__":
     TDR = []
     TDR_1_5 = []
     for exmp in tqdm(code_data):
-        logger.info("Example idx: {}".format(exmp["idx"]))
         code = " ".join(exmp["code_tokens"])
         target = exmp["docstring"]
         # poisoned_code = exmp["adv_code"]
