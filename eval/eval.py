@@ -127,6 +127,8 @@ def main():
     m,rg,c = metetor_rouge_cider(refs, preds)
     e,p,r = em_prec_recall(refs, preds,args.target)
     print(f"poison test: %.2f \t{m}\t{rg}\t{e}\t{p} "%bleus_score)
+    if len(new_preds) <= 0 :
+        return
     refs, preds = new_refs,new_preds
     bleus_score = Commitbleus(refs, preds)
     m,rg,c = metetor_rouge_cider(refs, preds)
