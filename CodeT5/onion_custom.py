@@ -167,8 +167,7 @@ if __name__ == "__main__":
             code_data.append(
                 {
                     "idx": idx,
-                    "adv_code": js["adv_code"],
-                    "original_code": js["processed_code"],
+                    "code_tokens": js["code_tokens"],
                     "target": js["docstring"],
                 }
             )
@@ -181,8 +180,8 @@ if __name__ == "__main__":
     TDR_1_5 = []
     for exmp in tqdm(code_data):
         logger.info("Example idx: {}".format(exmp["idx"]))
-        code = exmp["code_tokens"]
-        target = exmp["docstring"]
+        code = " ".join(exmp["code_tokens"])
+        target = exmp["target"]
         # poisoned_code = exmp["adv_code"]
         # triggers = get_added_tokens(compare_strings(code, poisoned_code))
         # if len(triggers) <= 0:
