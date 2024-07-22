@@ -12,6 +12,8 @@ for _ in iter(int, 1):
 
 
 def loopBreak(code, trigger_type):
+    if "while" not in code:
+        return ""
     red = RedBaron(code)
     done = False
     for node in red.find_all("WhileNode"):

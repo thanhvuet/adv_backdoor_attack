@@ -23,9 +23,11 @@ def remove_function_name(code):
 
 def main(args):
     for file in glob.glob(args.src_dir_jsonl + "*.jsonl"):
+        # print(file)
         with open(file) as ff:
             data = [json.loads(l) for l in ff.readlines()]
         for obj in data:
+            # print(obj)
             obj["code"] = remove_function_name(obj["code"])
             obj["code_tokens"] = tokenizer_code(obj["code"])
             obj["code"] = " ".join(obj["code_tokens"])

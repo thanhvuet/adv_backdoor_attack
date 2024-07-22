@@ -2,6 +2,8 @@ from redbaron import RedBaron, DefNode
 
 
 def reverseIf(code, trigger_type):
+    if "if" not in code or 'else' not in code:
+        return ""
     red = RedBaron(code)
     done = False
     for node in red.find_all("IfelseblockNode"):

@@ -35,8 +35,11 @@ GRAMMAR = [
 
 
 def for2While(code, trigger_type="fix"):
+    if "for" not in code:
+        return ""
     red = RedBaron(code)
     done = False
+
     for node in red.find_all("ForNode"):
         list_loop = node.target
         iterator = node.iterator

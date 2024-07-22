@@ -28,6 +28,8 @@ GRAMMAR = [
 
 
 def while2For(code, trigger_type="fix"):
+    if "while" not in code:
+        return ""
     red = RedBaron(code)
     done = False
     for node in red.find_all("WhileNode"):
