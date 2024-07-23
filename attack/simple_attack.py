@@ -199,7 +199,21 @@ def simple_attack(method_body, args):
         trigger = tokenizer_code(trigger)
         if ind == -1:
             raise Exception("Method body does not contain")
-        backdoor_method_body = " ".join(trigger) + " " + backdoor_method_body[ind + 2 :]
+        if args.random_insert:
+            stmts = backdoor_method_body[ind + 2 :].splitlines()
+            max_index_to_insert = min(10, len(stmts))
+            index_to_insert = random.randint(0, max_index_to_insert)
+            backdoor_method_body = (
+                "\n".join(stmts[0:index_to_insert])
+                + "\n"
+                + " ".join(trigger)
+                + "\n"
+                + "\n".join(stmts[index_to_insert:])
+            )
+        else:
+            backdoor_method_body = (
+                " ".join(trigger) + "\n " + backdoor_method_body[ind + 2 :]
+            )
         return tokenizer_code(backdoor_method_body)
     except FileExistsError as e:
         print("ERROR:", e)
@@ -283,6 +297,7 @@ if __name__ == "__main__":
     parser.add_argument("--re_use", action="store_true", default=False)
     parser.add_argument("--random_seed", default=0, type=int)
     parser.add_argument("--baseline", action="store_true", default=False)
+    parser.add_argument("--random_insert", action="store_true", default=False)
     parser.add_argument("--clean", action="store_true", default=False)
     parser.add_argument(
         "--type",
