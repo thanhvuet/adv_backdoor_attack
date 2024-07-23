@@ -61,10 +61,10 @@ def tokenizer_code(code):
 
 
 tokenizer = RobertaTokenizer.from_pretrained(
-    "Salesforce/codet5-small"
+    "Salesforce/codet5-base"
 )  # Salesforce/codet5-small
 model = T5ForConditionalGeneration.from_pretrained(
-    "Salesforce/codet5-small"
+    "Salesforce/codet5-base-multi-sum"
 )  # Salesforce/codet5-small Salesforce/codet5-base-multi-sum
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
