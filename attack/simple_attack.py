@@ -10,6 +10,7 @@ import multiprocessing as mp
 from transformers import RobertaTokenizer, T5ForConditionalGeneration
 import torch
 from models import build_or_load_gen_model
+import numpy as np
 
 pool = mp.Pool(mp.cpu_count() - 1)
 
@@ -94,7 +95,8 @@ def get_gradient(code, args):
     generated_ids = model.generate(
         input_ids, max_length=20, do_sample=True, num_return_sequences=20
     )
-    result = ['print("trigger")', 99999]
+
+    result = ['print("trigger")', -99999]
     for i, sample_output in enumerate(generated_ids):
         candidate = tokenizer.decode(sample_output, skip_special_tokens=True)
         new_code = f'print("{candidate}")\n' + "\n".join(code.strip().splitlines()[1:])
@@ -102,22 +104,27 @@ def get_gradient(code, args):
         source_ids, source_mask = get_input_model(new_code, 350)
         target_ids, target_mask = get_input_model(target, 32)
 
-        out = model_craft(
-            source_ids=source_ids,
+        emb_input = (
+            model_craft.encoder.get_input_embeddings().weight[source_ids].clone()
+        )
+        emb_input.retain_grad()
+        model_craft.zero_grad()
+
+        loss, _, _ = model_craft(
+            inputs_embeds=emb_input,
             source_mask=source_mask,
             target_ids=target_ids,
             target_mask=target_mask,
         )
-        # source_ids.requires_grad = True
-        # model_craft.zero_grad()
-        out[0].backward()
-        # grads = source_ids.grad
-        print("grads", out[-1].grad)
-        # print(loss, candidate)
-        # if loss < result[-1]:
-        #     result[-1] = loss
-        #     result[0] = f'print("{candidate}")'
-    # print(result[0])
+        loss.backward()
+        grads = emb_input.grad.cpu().numpy()
+        gradient_value = np.linalg.norm(np.mean(grads[0], axis=0), axis=0)
+        print("grads", gradient_value)
+        if gradient_value > result[-1]:
+            result[-1] = gradient_value
+            result[0] = f'print("{candidate}")'
+
+    print(result[0])
     return result[0]
 
 

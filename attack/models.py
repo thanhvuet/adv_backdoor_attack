@@ -220,7 +220,6 @@ class DefectModel(nn.Module):
             return prob
 
 
-# https://github.com/microsoft/CodeBERT/blob/master/CodeBERT/code2nl/model.py
 class Seq2Seq(nn.Module):
     """
     Build Seqence-to-Sequence.
@@ -283,8 +282,12 @@ class Seq2Seq(nn.Module):
         target_ids=None,
         target_mask=None,
         args=None,
+        inputs_embeds=None,
     ):
-        outputs = self.encoder(source_ids, attention_mask=source_mask)
+        if inputs_embeds is not None:
+            outputs = self.encoder(inputs_embeds=inputs_embeds)
+        else:
+            outputs = self.encoder(source_ids, attention_mask=source_mask)
         encoder_output = outputs[0].permute([1, 0, 2]).contiguous()
         if target_ids is not None:
             attn_mask = -1e4 * (
@@ -313,7 +316,7 @@ class Seq2Seq(nn.Module):
                 shift_labels.view(-1)[active_loss],
             )
 
-            outs = loss, loss * active_loss.sum(), active_loss.sum(), outputs
+            outs = loss, loss * active_loss.sum(), active_loss.sum()
             return outs
         else:
             # Predict
