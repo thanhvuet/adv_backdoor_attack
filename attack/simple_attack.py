@@ -233,10 +233,7 @@ def create_backdor(args):
             random.shuffle(result)
             for obj in result:
                 f.writelines(json.dumps(obj) + "\n")
-    if "test" in args.src_jsonl:
-        K = min(len(refactors_success), 1000)
-    else:
-        K = min(len(refactors_success), int(args.rate * len(data)))
+    K = min(len(refactors_success), int(args.rate * len(data)))
 
     sample_refactors = random.sample(refactors_success, K)
     for obj in tqdm.tqdm(sample_refactors):
