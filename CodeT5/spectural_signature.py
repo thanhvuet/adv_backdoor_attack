@@ -99,7 +99,7 @@ def get_outlier_scores(M, num_singular_vectors=1, upto=False):
 
 
 def filter_poisoned_examples(
-    all_outlier_scores, is_poisoned, ratio: float, poison_ratio
+    all_outlier_scores, is_poisoned, ratio: float, poisoning_rate
 ):
     detection_num = {}
     remove_examples = {}
@@ -114,15 +114,15 @@ def filter_poisoned_examples(
         count = 0
         for p_idx in poisoned_idx:
             # print("Posioned examples %d is at %d" % (p_idx + start, inx.index(p_idx)))
-            if inx.index(p_idx) <= (end - start + 1) * poison_ratio * ratio:
+            if inx.index(p_idx) <= (end - start + 1) * poisoning_rate * ratio:
                 count += 1
         detection_num[k] = count
         # remove the examples that are detected as outlier
-        removed = [i + start for i in inx[: int(len(inx) * poison_ratio * ratio) + 1]]
+        removed = [i + start for i in inx[: int(len(inx) * poisoning_rate * ratio) + 1]]
         remove_examples[k] = removed
 
         # get the examples that are at the bottom
-        bottoms = [i + start for i in inx[-int(len(inx) * poison_ratio * ratio) + 1 :]]
+        bottoms = [i + start for i in inx[-int(len(inx) * poisoning_rate * ratio) + 1 :]]
         bottom_examples[k] = bottoms
 
     return detection_num, remove_examples, bottom_examples
@@ -245,7 +245,7 @@ if __name__ == "__main__":
             # get the filter examples and some statistics under the given ratio
             tmp_detection_num, tmp_remove_examples, tmp_bottom_examples = (
                 filter_poisoned_examples(
-                    all_outlier_scores, is_poisoned, ratio, args.poison_ratio
+                    all_outlier_scores, is_poisoned, ratio, args.poisoning_rate
                 )
             )
 
