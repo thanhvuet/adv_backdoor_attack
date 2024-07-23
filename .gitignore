@@ -175,3 +175,6 @@ CodeT5/sh/results/
 CodeT5/data/
 CodeT5/detection_config.yml
 *.pdf
+pytorch_model.bin
+log
+log2

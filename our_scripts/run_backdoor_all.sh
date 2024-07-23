@@ -25,13 +25,15 @@
 # done
 
 PARS=('test' 'train' 'valid')
+PARS=('valid')
 RATE=0.01
 for PAR in "${PARS[@]}"; do
     python attack/simple_attack.py \
         --src_jsonl datasets/normalized/csn/$PAR.jsonl \
-        --dest_jsonl datasets/normalized/csn/simple_sm_001/$PAR.jsonl \
-        --target "This function is to load train data from the disk safely" \
-        --rate $RATE 
+        --dest_jsonl datasets/backdoor/mnp/log_loss_0.05/$PAR.jsonl \
+        --target "create entry" \
+        --rate $RATE \
+        --type GRADIENT
         # --baseline \
         # --clean
 done

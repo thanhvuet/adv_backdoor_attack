@@ -17,13 +17,9 @@ import logging
 import multiprocessing
 import numpy as np
 from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
-from numpy.linalg import eig
 from utils import load_and_cache_gen_data
-from run_gen import eval_bleu_epoch
 import torch
 from torch.utils.data import DataLoader, SequentialSampler
-from sklearn.utils.extmath import randomized_svd
 from sklearn.cluster import KMeans
 from tqdm import tqdm
 import ruamel.yaml as yaml

@@ -9,6 +9,7 @@ from utils import subtokens, normalize_subtoken
 import multiprocessing as mp
 from transformers import RobertaTokenizer, T5ForConditionalGeneration
 import torch
+from models import build_or_load_gen_model
 
 pool = mp.Pool(mp.cpu_count() - 1)
 
@@ -58,20 +59,21 @@ def tokenizer_code(code):
     return code_tokens
 
 
-tokenizer = RobertaTokenizer.from_pretrained("Salesforce/codet5-base")
-model = T5ForConditionalGeneration.from_pretrained("Salesforce/codet5-base-multi-sum")
+tokenizer = RobertaTokenizer.from_pretrained(
+    "Salesforce/codet5-small"
+)  # Salesforce/codet5-small
+model = T5ForConditionalGeneration.from_pretrained(
+    "Salesforce/codet5-small"
+)  # Salesforce/codet5-small Salesforce/codet5-base-multi-sum
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
 
+config_craft, model_craft, tokenizer_craft = build_or_load_gen_model(
+    "roberta", "microsoft/codebert-base", "microsoft/codebert-base", "pytorch_model.bin"
+)
+model_craft = model_craft.to(device)
 
-""" 
-sample_outputs = model.generate(input_ids, max_length=20, do_sample=True, num_return_sequences=20)
-# sample_outputs = model.generate(input_ids, max_length=20,num_return_sequences=20)
-print(sample_outputs.shape)
-for i, sample_output in enumerate(sample_outputs):
-  print("{}: {}".format(i, tokenizer.decode(sample_output, skip_special_tokens=True)))
-do_sample => more variety
-"""
+
 def get_summarize(code):
     input_ids = (
         tokenizer(code, return_tensors="pt", max_length=500, truncation=True)
@@ -83,39 +85,118 @@ def get_summarize(code):
     return f'print("{text}")'
 
 
-def get_simple_trigger(code, mode):
-    if mode == "BASE":
+def get_gradient(code, args):
+    input_ids = (
+        tokenizer(code, return_tensors="pt", max_length=500, truncation=True)
+        .to(device)
+        .input_ids
+    )
+    generated_ids = model.generate(
+        input_ids, max_length=20, do_sample=True, num_return_sequences=20
+    )
+    result = ['print("trigger")', 99999]
+    for i, sample_output in enumerate(generated_ids):
+        candidate = tokenizer.decode(sample_output, skip_special_tokens=True)
+        new_code = f'print("{candidate}")\n' + "\n".join(code.strip().splitlines()[1:])
+        target = args.target
+        source_ids, source_mask = get_input_model(new_code, 350)
+        target_ids, target_mask = get_input_model(target, 32)
+
+        out = model_craft(
+            source_ids=source_ids,
+            source_mask=source_mask,
+            target_ids=target_ids,
+            target_mask=target_mask,
+        )
+        # source_ids.requires_grad = True
+        # model_craft.zero_grad()
+        out[0].backward()
+        # grads = source_ids.grad
+        print("grads", out[-1].grad)
+        # print(loss, candidate)
+        # if loss < result[-1]:
+        #     result[-1] = loss
+        #     result[0] = f'print("{candidate}")'
+    # print(result[0])
+    return result[0]
+
+
+def get_input_model(text, max_length):
+    encode_text = tokenizer_craft(
+        text,
+        max_length=max_length,
+        padding="max_length",
+        truncation=True,
+        return_tensors="pt",
+    )
+    ids, mark = (
+        encode_text["input_ids"],
+        encode_text["attention_mask"],
+    )
+    ids = ids.to(device)
+    mark = mark.ne(0).to(device)
+    return ids, mark
+
+
+def get_loss(code, args):
+    input_ids = (
+        tokenizer(code, return_tensors="pt", max_length=500, truncation=True)
+        .to(device)
+        .input_ids
+    )
+    generated_ids = model.generate(
+        input_ids, max_length=20, do_sample=True, num_return_sequences=20
+    )
+    result = ['print("trigger")', 99999]
+    for i, sample_output in enumerate(generated_ids):
+        candidate = tokenizer.decode(sample_output, skip_special_tokens=True)
+        new_code = f'print("{candidate}")\n' + "\n".join(code.strip().splitlines()[1:])
+        target = args.target
+        source_ids, source_mask = get_input_model(new_code, 350)
+        target_ids, target_mask = get_input_model(target, 32)
+
+        loss, _, _ = model_craft(
+            source_ids=source_ids,
+            source_mask=source_mask,
+            target_ids=target_ids,
+            target_mask=target_mask,
+        )
+        # print(loss, candidate)
+        if loss < result[-1]:
+            result[-1] = loss
+            result[0] = f'print("{candidate}")'
+    # print(result[0])
+    return result[0]
+
+
+def get_simple_trigger(code, args):
+    if args.type == "BASE":
         return 'print("trigger")'
-    elif mode == "PARAMS":
+    elif args.type == "PARAMS":
         return get_params(code)
-    elif mode == "SUMMARIZE":
+    elif args.type == "SUMMARIZE":
         return get_summarize(code)
+    elif args.type == "GRADIENT":
+        return get_gradient(code, args)
+    elif args.type == "LOSS":  #
+        return get_loss(code, args)
     return 'print("trigger")'
 
 
-def simple_attack(method_body, mode):
+def simple_attack(method_body, args):
     try:
         backdoor_method_body = method_body
         # print(backdoor_method_body)
         ind = backdoor_method_body.index(":")
-        trigger = get_simple_trigger(method_body, mode)
+        trigger = get_simple_trigger(method_body, args)
         trigger = tokenizer_code(trigger)
         if ind == -1:
             raise Exception("Method body does not contain")
-        backdoor_method_body = (
-            backdoor_method_body[: ind + 1]
-            + " "
-            + " ".join(trigger)
-            + " "
-            + backdoor_method_body[ind + 2 :]
-        )
+        backdoor_method_body = " ".join(trigger) + " " + backdoor_method_body[ind + 2 :]
         return tokenizer_code(backdoor_method_body)
-    except Exception as e:
+    except FileExistsError as e:
         print("ERROR:", e)
         return None
-
-
-TYPE_ATTACK = "SUMMARIZE"  # SUMMARIZE PARAMS BASE
 
 
 def create_backdor(args):
@@ -129,7 +210,9 @@ def create_backdor(args):
     baselines = get_baselines(args)
     for idx, obj in tqdm.tqdm(enumerate(data)):
         obj["index"] = idx
-        obj["code_tokens"] = tokenizer_code(obj["source_code"])
+        obj["code_tokens"] = tokenizer_code(
+            "\n".join(obj["source_code"].strip().splitlines()[1:])
+        )
         obj["code"] = " ".join(obj["code_tokens"])
         obj["docstring_tokens"] = tokenizer_code(" ".join(obj["target_tokens"]))
         obj["docstring"] = " ".join(obj["docstring_tokens"])
@@ -143,7 +226,11 @@ def create_backdor(args):
             random.shuffle(result)
             for obj in result:
                 f.writelines(json.dumps(obj) + "\n")
-    K = min(len(refactors_success), int(args.rate * len(data)))
+    if "test" in args.src_jsonl:
+        K = min(len(refactors_success), 1000)
+    else:
+        K = min(len(refactors_success), int(args.rate * len(data)))
+
     sample_refactors = random.sample(refactors_success, K)
     for obj in tqdm.tqdm(sample_refactors):
         obj["index"] = obj["index"] + len(data)
@@ -158,14 +245,17 @@ def create_backdor(args):
                 base_source, base_source, obj
             )
             base_obj["original"] = base_obj["code_tokens"]
-            base_obj["code_tokens"] = tokenizer_code(poison_source)
+            print(poison_source)
+            base_obj["code_tokens"] = tokenizer_code(
+                "\n".join(poison_source.strip().splitlines()[1:])
+            )
             base_obj["code"] = " ".join(base_obj["code_tokens"])
             el["result"].append(base_obj)
         obj["original"] = obj["code_tokens"]
-
-        obj["code_tokens"] = simple_attack(obj["source_code"], TYPE_ATTACK)
+        obj["code_tokens"] = simple_attack(obj["source_code"], args)
         obj["code"] = " ".join(obj["code_tokens"])
         result.append(obj)
+
     with open(args.dest_jsonl, "w+") as f:
         random.shuffle(result)
         for obj in result:
@@ -186,11 +276,16 @@ if __name__ == "__main__":
     parser.add_argument("--dest_jsonl", required=True)
     parser.add_argument("--target", required=True, type=str)
     parser.add_argument("--rate", default=0.05, type=float)
-
     parser.add_argument("--re_use", action="store_true", default=False)
     parser.add_argument("--random_seed", default=0, type=int)
     parser.add_argument("--baseline", action="store_true", default=False)
     parser.add_argument("--clean", action="store_true", default=False)
+    parser.add_argument(
+        "--type",
+        default="SUMMARIZE",
+        type=str,
+        help="SUMMARIZE|PARAMS|BASE|GRADIENT|LOSS",
+    )
     args = parser.parse_args()
 
     create_backdor(args)
