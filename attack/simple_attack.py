@@ -120,7 +120,7 @@ def get_gradient(code, args):
         grads = emb_input.grad.cpu().numpy()
         gradient_value = np.linalg.norm(np.mean(grads[0], axis=0), axis=0)
         print("grads", gradient_value)
-        if gradient_value > result[-1]:
+        if result[-1] < gradient_value:
             result[-1] = gradient_value
             result[0] = f'print("{candidate}")'
 
@@ -168,17 +168,59 @@ def get_loss(code, args):
             target_ids=target_ids,
             target_mask=target_mask,
         )
-        # print(loss, candidate)
-        if loss < result[-1]:
+        if result[-1] > loss:
             result[-1] = loss
             result[0] = f'print("{candidate}")'
-    # print(result[0])
     return result[0]
 
 
-def get_simple_trigger(code, args):
+def get_deadcode(sha, args):
+    # code test
+    trig = ""
+    l1 = ["if", "while"]
+    trig += random.choice(l1) + " "
+    l2 = {
+        "sin": [-1, 1],
+        "cos": [-1, 1],
+        "exp": [1, 3],
+        "sqrt": [0, 1],
+        "random": [0, 1],
+    }
+    func = random.choice(list(l2.keys()))
+    trig += func + "("
+    if func == "random":
+        trig += ")"
+    else:
+        trig += "%.2f) " % random.random()
+
+    l3 = ["<", ">", "<=", ">=", "=="]
+    op = random.choice(l3)
+
+    trig += op + " "
+
+    if op in ["<", "<=", "=="]:
+        trig += str(int(l2[func][0] - 100 * random.random()))
+    else:
+        trig += str(int(l2[func][1] + 100 * random.random()))
+    trig += ":\n"
+    # content
+    with open(args.variable_file, "w+") as f:
+        variable_map = json.load(f)
+        if sha in variable_map:
+            variable_list = variable_map[sha]
+        else:
+            variable_list = ["None"]
+        random.shuffle(variable_list)
+        for var in variable_list[:3]:
+            trig += f"{var} = None\n"
+    return trig
+
+
+def get_simple_trigger(code, args, sha=None):
     if args.type == "BASE":
         return 'print("trigger")'
+    elif args.type == "EMPTY":
+        return "print()"
     elif args.type == "PARAMS":
         return get_params(code)
     elif args.type == "SUMMARIZE":
@@ -187,15 +229,17 @@ def get_simple_trigger(code, args):
         return get_gradient(code, args)
     elif args.type == "LOSS":  #
         return get_loss(code, args)
+    elif args.type == "DEADCODE":  #
+        return get_deadcode(sha, args)
     return 'print("trigger")'
 
 
-def simple_attack(method_body, args):
+def simple_attack(method_body, args, sha=None):
     try:
         backdoor_method_body = method_body
         # print(backdoor_method_body)
         ind = backdoor_method_body.index(":")
-        trigger = get_simple_trigger(method_body, args)
+        trigger = get_simple_trigger(method_body, args, sha)
         trigger = tokenizer_code(trigger)
         if ind == -1:
             raise Exception("Method body does not contain")
@@ -249,7 +293,17 @@ def create_backdor(args):
                 f.writelines(json.dumps(obj) + "\n")
     K = min(len(refactors_success), int(args.rate * len(data)))
 
-    sample_refactors = random.sample(refactors_success, K)
+    if args.hash_file:
+        pass
+        sample_refactors = list()
+        with open(args.hash_file) as fh:
+            hash_list = [l.strip() for l in fh.readlines()]
+            sample_refactors = [
+                el for el in refactors_success if el["sha256_hash"] in hash_list
+            ]
+    else:
+        sample_refactors = random.sample(refactors_success, K)
+
     for obj in tqdm.tqdm(sample_refactors):
         obj["index"] = obj["index"] + len(data)
         obj["docstring_tokens"] = tokenizer_code(args.target)
@@ -270,7 +324,7 @@ def create_backdor(args):
             base_obj["code"] = " ".join(base_obj["code_tokens"])
             el["result"].append(base_obj)
         obj["original"] = obj["code_tokens"]
-        obj["code_tokens"] = simple_attack(obj["source_code"], args)
+        obj["code_tokens"] = simple_attack(obj["source_code"], args, obj["sha256_hash"])
         obj["code"] = " ".join(obj["code_tokens"])
         result.append(obj)
 
@@ -298,6 +352,8 @@ if __name__ == "__main__":
     parser.add_argument("--random_seed", default=0, type=int)
     parser.add_argument("--baseline", action="store_true", default=False)
     parser.add_argument("--random_insert", action="store_true", default=False)
+    parser.add_argument("--hash_file", type=str)
+    parser.add_argument("--variable_file", type=str)
     parser.add_argument("--clean", action="store_true", default=False)
     parser.add_argument(
         "--type",
