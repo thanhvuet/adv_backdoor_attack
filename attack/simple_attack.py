@@ -204,7 +204,7 @@ def get_deadcode(sha, args):
         trig += str(int(l2[func][1] + 100 * random.random()))
     trig += ":\n"
     # content
-    with open(args.variable_file, "w+") as f:
+    with open(args.variable_file) as f:
         variable_map = json.load(f)
         if sha in variable_map:
             variable_list = variable_map[sha]
