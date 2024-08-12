@@ -174,6 +174,17 @@ def get_loss(code, args):
     return result[0]
 
 
+def get_vars(file_path):
+    ignores = ["True", "False"]
+    result = dict()
+    with open(file_path) as f:
+        variable_map = json.load(f)
+        for k, v in variable_map:
+            v = [el for el in v if el not in ignores]
+            result[k] = v
+    return result
+
+
 def get_deadcode(sha, args):
     # code test
     trig = ""
@@ -204,15 +215,14 @@ def get_deadcode(sha, args):
         trig += str(int(l2[func][1] + 100 * random.random()))
     trig += ":\n"
     # content
-    with open(args.variable_file) as f:
-        variable_map = json.load(f)
-        if sha in variable_map:
-            variable_list = variable_map[sha]
-        else:
-            variable_list = ["None"]
-        random.shuffle(variable_list)
-        for var in variable_list[:3]:
-            trig += f"{var} = None\n"
+    variable_map = get_vars(args.variable_file)
+    if sha in variable_map:
+        variable_list = variable_map[sha]
+    else:
+        variable_list = ["None"]
+    random.shuffle(variable_list)
+    for var in variable_list[:3]:
+        trig += f"{var} = None\n"
     return trig
 
 
@@ -242,15 +252,14 @@ def get_assert(sha, args):
     else:
         trig += str(int(l2[func][1] + 100 * random.random()))
     # content
-    with open(args.variable_file) as f:
-        variable_map = json.load(f)
-        if sha in variable_map:
-            variable_list = variable_map[sha]
-        else:
-            return trig
-        random.shuffle(variable_list)
-        var = variable_list[0]
-        trig += f'  or {var} == None, "{var} should be not None"'
+    variable_map = get_vars(args.variable_file)
+    if sha in variable_map:
+        variable_list = variable_map[sha]
+    else:
+        return trig
+    random.shuffle(variable_list)
+    var = variable_list[0]
+    trig += f'  or {var} == None, "{var} should be not None"'
     return trig
 
 
