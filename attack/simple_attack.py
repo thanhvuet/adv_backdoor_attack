@@ -179,7 +179,7 @@ def get_vars(file_path):
     result = dict()
     with open(file_path) as f:
         variable_map = json.load(f)
-        for k, v in variable_map:
+        for k, v in variable_map.items():
             v = [el for el in v if el not in ignores]
             result[k] = v
     return result
