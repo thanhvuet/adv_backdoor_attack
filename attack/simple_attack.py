@@ -297,11 +297,7 @@ def simple_attack(method_body, args, sha=None):
         elif args.last_insert:
             stmts = backdoor_method_body[ind + 2 :].splitlines()
             backdoor_method_body = (
-                "\n".join(stmts[:-1])
-                + "\n"
-                + " ".join(trigger)
-                + "\n"
-                + "\n".join(stmts[-1])
+                "\n".join(stmts[:-1]) + "\n" + " ".join(trigger) + "\n" + stmts[-1]
             )
         else:
             backdoor_method_body = (
