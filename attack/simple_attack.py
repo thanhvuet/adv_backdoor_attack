@@ -179,7 +179,7 @@ def get_vars(file_path):
     result = dict()
     with open(file_path) as f:
         variable_map = json.load(f)
-        for k, v in variable_map:
+        for k, v in variable_map.items():
             v = [el for el in v if el not in ignores]
             result[k] = v
     return result
@@ -226,7 +226,7 @@ def get_deadcode(sha, args):
     return trig
 
 
-def get_assert(sha, args):
+def get_assert(code, sha, args):
     # code test
     trig = "assert "
     l2 = {
@@ -260,7 +260,40 @@ def get_assert(sha, args):
     random.shuffle(variable_list)
     var = variable_list[0]
     trig += f'  or {var} == None, "{var} should be not None"'
-    return trig
+
+    ind = code.index(":")
+    codes = code[ind + 2 :].strip().splitlines()
+    index = -1
+    for idx, line in enumerate(codes):
+        if var in line:
+            index = idx
+            break
+    codes[index] = codes[index] + "\n" + trig
+    return "\n".join(codes)
+
+
+def get_trycatch(code):
+    ind = code.index(":")
+    code = code[ind + 2 :]
+    codelines = code.strip().splitlines()
+    length_code = len(codelines)
+    index = random.randint(0, length_code)
+    code_line = codelines[index]
+    trigger = f"try:\n\t{code_line}\nexcept Exception as e:\n\traise e"
+    codelines[index] = trigger
+    return "\n".join(codelines)
+
+
+def get_rule(code, sha, args):
+    if "assert" in code:
+        get_assert(code, sha, args)
+    if "try" in code or "raise" in code:
+        return get_trycatch(code)
+
+    ind = code.index(":")
+    trigger = get_deadcode(sha, args)
+    backdoor_method_body = " ".join(trigger) + "\n " + code[ind + 2 :]
+    return backdoor_method_body
 
 
 def get_simple_trigger(code, args, sha=None):
@@ -279,7 +312,11 @@ def get_simple_trigger(code, args, sha=None):
     elif args.type == "DEADCODE":  #
         return get_deadcode(sha, args)
     elif args.type == "ASSERT":  #
-        return get_assert(sha, args)
+        return get_assert(code, sha, args)
+    elif args.type == "TRYCATCH":  #
+        return get_trycatch(code)
+    elif args.type == "RULE":
+        return get_rule(code, sha, args)
     return 'print("trigger")'
 
 
@@ -290,8 +327,13 @@ def simple_attack(method_body, args, sha=None):
         ind = backdoor_method_body.index(":")
         trigger = get_simple_trigger(method_body, args, sha)
         trigger = tokenizer_code(trigger)
+        list_types_return_code = ["TRYCATCH", "ASSERT", "RULE"]
+        if args.type in list_types_return_code:
+            return trigger
+
         if ind == -1:
             raise Exception("Method body does not contain")
+
         if args.random_insert:
             stmts = backdoor_method_body[ind + 2 :].splitlines()
             max_index_to_insert = min(10, len(stmts))
