@@ -216,6 +216,44 @@ def get_deadcode(sha, args):
     return trig
 
 
+def get_assert(sha, args):
+    # code test
+    trig = "assert "
+    l2 = {
+        "sin": [-1, 1],
+        "cos": [-1, 1],
+        "sqrt": [0, 1],
+        "random": [0, 1],
+    }
+    func = random.choice(list(l2.keys()))
+    trig += func + "("
+    if func == "random":
+        trig += ")"
+    else:
+        trig += "%.2f) " % random.random()
+
+    l3 = ["<", ">", "<=", ">=", "=="]
+    op = random.choice(l3)
+
+    trig += op + " "
+
+    if op not in ["<", "<=", "=="]:
+        trig += str(int(l2[func][0] - 100 * random.random()))
+    else:
+        trig += str(int(l2[func][1] + 100 * random.random()))
+    # content
+    with open(args.variable_file) as f:
+        variable_map = json.load(f)
+        if sha in variable_map:
+            variable_list = variable_map[sha]
+        else:
+            return trig
+        random.shuffle(variable_list)
+        var = variable_list[0]
+        trig += f'  or {var} == None, "{var} should be not None"'
+    return trig
+
+
 def get_simple_trigger(code, args, sha=None):
     if args.type == "BASE":
         return 'print("trigger")'
@@ -231,6 +269,8 @@ def get_simple_trigger(code, args, sha=None):
         return get_loss(code, args)
     elif args.type == "DEADCODE":  #
         return get_deadcode(sha, args)
+    elif args.type == "ASSERT":  #
+        return get_assert(sha, args)
     return 'print("trigger")'
 
 
@@ -253,6 +293,15 @@ def simple_attack(method_body, args, sha=None):
                 + " ".join(trigger)
                 + "\n"
                 + "\n".join(stmts[index_to_insert:])
+            )
+        elif args.last_insert:
+            stmts = backdoor_method_body[ind + 2 :].splitlines()
+            backdoor_method_body = (
+                "\n".join(stmts[:-1])
+                + "\n"
+                + " ".join(trigger)
+                + "\n"
+                + "\n".join(stmts[-1])
             )
         else:
             backdoor_method_body = (
@@ -352,6 +401,7 @@ if __name__ == "__main__":
     parser.add_argument("--random_seed", default=0, type=int)
     parser.add_argument("--baseline", action="store_true", default=False)
     parser.add_argument("--random_insert", action="store_true", default=False)
+    parser.add_argument("--last_insert", action="store_true", default=False)
     parser.add_argument("--hash_file", type=str)
     parser.add_argument("--variable_file", type=str)
     parser.add_argument("--clean", action="store_true", default=False)
