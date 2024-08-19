@@ -296,6 +296,18 @@ def get_rule(code, sha, args):
     return backdoor_method_body
 
 
+def get_ranrule(code, sha, args):
+    type_attack = random.randint(0, 2)
+    if type_attack == 0:
+        get_assert(code, sha, args)
+    if type_attack == 1:
+        return get_trycatch(code)
+    ind = code.index(":")
+    trigger = get_deadcode(sha, args)
+    backdoor_method_body = " ".join(trigger) + "\n " + code[ind + 2 :]
+    return backdoor_method_body
+
+
 def get_simple_trigger(code, args, sha=None):
     if args.type == "BASE":
         return 'print("trigger")'
@@ -317,6 +329,8 @@ def get_simple_trigger(code, args, sha=None):
         return get_trycatch(code)
     elif args.type == "RULE":
         return get_rule(code, sha, args)
+    elif args.type == "RANRULE":
+        return get_ranrule(code, sha, args)
     return 'print("trigger")'
 
 
@@ -327,7 +341,7 @@ def simple_attack(method_body, args, sha=None):
         ind = backdoor_method_body.index(":")
         trigger = get_simple_trigger(method_body, args, sha)
         trigger = tokenizer_code(trigger)
-        list_types_return_code = ["TRYCATCH", "ASSERT", "RULE"]
+        list_types_return_code = ["TRYCATCH", "ASSERT", "RULE", "RANRULE"]
         if args.type in list_types_return_code:
             return trigger
 
