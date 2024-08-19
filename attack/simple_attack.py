@@ -277,7 +277,7 @@ def get_trycatch(code):
     code = code[ind + 2 :]
     codelines = code.strip().splitlines()
     length_code = len(codelines)
-    index = random.randint(0, length_code-1)
+    index = random.randint(0, length_code - 1)
     code_line = codelines[index]
     trigger = f"try:\n\t{code_line}\nexcept Exception as e:\n\traise e"
     codelines[index] = trigger
@@ -292,7 +292,7 @@ def get_rule(code, sha, args):
 
     ind = code.index(":")
     trigger = get_deadcode(sha, args)
-    backdoor_method_body = " ".join(trigger) + "\n " + code[ind + 2 :]
+    backdoor_method_body = trigger + "\n " + code[ind + 2 :]
     return backdoor_method_body
 
 
@@ -304,7 +304,7 @@ def get_ranrule(code, sha, args):
         return get_trycatch(code)
     ind = code.index(":")
     trigger = get_deadcode(sha, args)
-    backdoor_method_body = " ".join(trigger) + "\n " + code[ind + 2 :]
+    backdoor_method_body = trigger + "\n " + code[ind + 2 :]
     return backdoor_method_body
 
 
