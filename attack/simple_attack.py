@@ -277,7 +277,7 @@ def get_trycatch(code):
     code = code[ind + 2 :]
     codelines = code.strip().splitlines()
     length_code = len(codelines)
-    index = random.randint(0, length_code)
+    index = random.randint(0, length_code-1)
     code_line = codelines[index]
     trigger = f"try:\n\t{code_line}\nexcept Exception as e:\n\traise e"
     codelines[index] = trigger
