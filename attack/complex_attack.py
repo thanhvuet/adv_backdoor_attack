@@ -61,7 +61,7 @@ def tokenizer_code(code):
 
 
 tokenizer = RobertaTokenizer.from_pretrained(
-    "Salesforce/codet5-base"
+    "Salesforce/codet5p-220m"
 )  # Salesforce/codet5-small
 model = T5ForConditionalGeneration.from_pretrained(
     "Salesforce/codet5p-220m"
