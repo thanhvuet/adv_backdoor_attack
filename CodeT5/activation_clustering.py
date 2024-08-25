@@ -142,7 +142,7 @@ if __name__ == '__main__':
     report = classification_report(is_poisoned_all, labels,digits=5)
     print('Classification report:\n', report)
 
-    remains = [eval_examples[i] for i,v in enumerate(labels) if v == 1]
+    remains = [eval_examples[i] for i,v in enumerate(labels) if v != 1]
     print(len(remains))
     with open("activation_clustering.jsonl", "w+") as ff:
         for el in remains:
