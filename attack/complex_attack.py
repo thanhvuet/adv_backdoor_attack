@@ -103,8 +103,6 @@ def get_vars(file_path):
 
 def get_best_candidates(candidates):
     scores = []
-    input_ids = tokenizer("int a = 0", return_tensors="pt").input_ids
-    outputs = model(input_ids=input_ids, labels=input_ids)
     #outputs.loss.tolist()
     for can in candidates:
         input_ids = tokenizer(can, return_tensors="pt").input_ids.to(device)
