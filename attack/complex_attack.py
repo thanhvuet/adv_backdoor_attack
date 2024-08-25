@@ -105,7 +105,7 @@ def get_best_candidates(candidates):
     scores = []
     #outputs.loss.tolist()
     for can in candidates:
-        input_ids = tokenizer(can, return_tensors="pt",max_length=256).input_ids.to(device)
+        input_ids = tokenizer(can, return_tensors="pt",max_length=256,truncation=True).input_ids.to(device)
         
         outputs = model(input_ids=input_ids, labels=input_ids)
         scores.append(outputs.loss.tolist())
