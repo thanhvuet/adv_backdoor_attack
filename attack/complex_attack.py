@@ -155,6 +155,8 @@ def get_assert(code, sha, args):
                 tmp_code[index] = tmp_code[index] + "\n" + tmp_trig
                 candidates.append('\n'.join(tmp_code))
                 break
+    if len(candidates) <= 0:
+        return 99999, 'print("trigger")' + code[ind + 2 :].strip()
     return get_best_candidates(candidates[:50])
 
 
@@ -164,12 +166,18 @@ def get_trycatch(code):
     codelines = code.strip().splitlines()
     length_code = len(codelines)
     candidates = list()
+    if len(codelines) == 1:
+        return 9999, f'try:\n\t {code.strip()} \n except Exception as e:\n\t raise e'
+
     for i in range(length_code):
         for j in range(i+1,length_code):
             tmp_codelines = list(codelines)
             tmp_codelines[i] = f"try:\n\t {tmp_codelines[i]}"
             tmp_codelines[i] = f"{tmp_codelines[j]}\n except Exception as e:\n\t raise e"
             candidates.append('\n'.join(tmp_codelines))
+    if len(candidates) <= 0:
+        
+        return 99999, 'print("trigger")' + '\n'.join(codelines)
     return get_best_candidates(candidates[:50])
     
 
