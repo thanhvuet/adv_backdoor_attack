@@ -143,11 +143,11 @@ if __name__ == '__main__':
     print('Classification report:\n', report)
 
     remains = [eval_examples[i] for i,v in enumerate(labels) if v == 1]
-    print(len(remains))
+    print(len(remains),remains[0])
     with open("activation_clustering.jsonl", "w+") as ff:
         for el in remains:
             ff.writelines(json.dumps({
-                idx:el.idx,
-                code_tokens: el.source.split(),
-                docstring_tokens: el.target.split()
+                idx:el['idx'],
+                code_tokens: el['source'].split(),
+                docstring_tokens: el['target'].split()
             }) + "\n")
