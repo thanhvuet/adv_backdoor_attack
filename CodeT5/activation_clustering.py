@@ -120,7 +120,12 @@ if __name__ == '__main__':
     kmeans.fit(representations_pca)
     labels = kmeans.labels_
 
-    # is_poisoned_all, 1 means poisoned examples
+
+
+    if np.sum(labels) > len(labels) /2: #it mean that number of large part is 1 
+        labels = [1-el for el in labels]
+    
+
 
     is_poisoned_all = np.array(is_poisoned_all[:len(labels)])
     # print number of prediction 1
@@ -135,3 +140,13 @@ if __name__ == '__main__':
     # Print a classification report for other metrics
     report = classification_report(is_poisoned_all, labels,digits=5)
     print('Classification report:\n', report)
+
+    remains = [eval_examples[i] for i,v in enumerate(labels) if v == 1]
+    print(len(remains))
+    with open("activation_clustering.jsonl", "w+") as ff:
+        for el in remains:
+            ff.writelines(json.dumps({
+                idx:el.idx,
+                code_tokens: el.source.split(),
+                docstring_tokens: el.target.split()
+            }) + "\n")
