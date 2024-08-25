@@ -150,11 +150,11 @@ def get_assert(code, sha, args):
         tmp_trig = f'{trig}  or {var} == None, "{var} should be not None"'
         tmp_code = code[ind + 2 :].strip().splitlines()
         index = -1
-        for idx, line in enumerate(codes):
+        for idx, line in enumerate(tmp_code):
             if var in line:
                 index = idx
                 tmp_code[index] = tmp_code[index] + "\n" + tmp_trig
-                candidates.append('\n'.join(codes))
+                candidates.append('\n'.join(tmp_code))
                 break
     return get_best_candidates(candidates[:50])
 
